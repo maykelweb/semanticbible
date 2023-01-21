@@ -6,6 +6,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 export default async function (req, res) {
+  
   if (!configuration.apiKey) {
     res.status(500).json({
       error: {
@@ -15,8 +16,11 @@ export default async function (req, res) {
     return;
   }
 
-  const animal = req.body.animal || '';
-  if (animal.trim().length === 0) {
+  const input = req.body.input || '';
+  const model = "text-embedding-ada-002"
+  const request = {input: input, model: model}
+
+  if (input.trim().length === 0) {
     res.status(400).json({
       error: {
         message: "Please enter a valid animal",
@@ -26,37 +30,35 @@ export default async function (req, res) {
   }
 
   try {
-    const completion = await openai.createCompletion({
-      model: "text-davinci-003",
-      prompt: generatePrompt(animal),
-      temperature: 0.6,
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${configuration.apiKey}`
+      },
+      body: JSON.stringify(request)
     });
-    res.status(200).json({ result: completion.data.choices[0].text });
+    const data = await response.json();
+    res.status(200).json({ result: data.data[0].embedding });
   } catch(error) {
-    // Consider adjusting the error handling logic for your use case
-    if (error.response) {
-      console.error(error.response.status, error.response.data);
-      res.status(error.response.status).json(error.response.data);
-    } else {
-      console.error(`Error with OpenAI API request: ${error.message}`);
-      res.status(500).json({
-        error: {
-          message: 'An error occurred during your request.',
-        }
-      });
-    }
+    console.error(`Error with OpenAI API request: ${error.message}`);
+    res.status(500).json({
+      error: {
+        message: 'An error occurred during your request.',
+      }
+    });
   }
 }
 
 function generatePrompt(animal) {
-  const capitalizedAnimal =
+  const capitalizedAnimals =
     animal[0].toUpperCase() + animal.slice(1).toLowerCase();
   return `Suggest three names for an animal that is a superhero.
 
-Animal: Cat
+Animals: Cat
 Names: Captain Sharpclaw, Agent Fluffball, The Incredible Feline
-Animal: Dog
+Animals: Dog
 Names: Ruff the Protector, Wonder Canine, Sir Barks-a-Lot
-Animal: ${capitalizedAnimal}
+Animals: ${capitalizedAnimals}
 Names:`;
 }
