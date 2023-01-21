@@ -27,7 +27,7 @@
   padding-top: 60px;
 }
 .main .icon {
-  width: 34px;
+  width: 64px;
 }
 .main h3 {
   font-size: 32px;
@@ -64,4 +64,5 @@
 .main .result {
   font-weight: bold;
   margin-top: 40px;
+  max-width: 800px;
 }
